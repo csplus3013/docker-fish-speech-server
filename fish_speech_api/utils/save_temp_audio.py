@@ -1,3 +1,4 @@
+import os
 import tempfile
 import logging
 
@@ -6,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_temp_file(suffix=".wav", dir="temp"):
+    os.makedirs(dir, exist_ok=True)
     return tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir=dir)
 
 
