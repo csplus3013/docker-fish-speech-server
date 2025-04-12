@@ -1,7 +1,8 @@
 # 🐟 Fish Speech API
 
 OpenAPI-like voice generation server based on [fish-speech-1.5](https://huggingface.co/fishaudio/fish-speech-1.5).
-Supports text-to-speech and voice style transfer via reference audio samples.
+
+Supports `text-to-speech` and voice style transfer via reference audio samples.
 
 ## Requirements
 
