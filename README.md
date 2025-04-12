@@ -99,8 +99,8 @@ curl http://gpu02:8000/v1/audio/speech \
   -X POST \
   -H 'Content-Type: multipart/form-data' \
   -F model="fish-speech-1.5" \
-  -F input="Привет! Это тест голоса." \
-  -F top_p="0.8" \
+  -F input="Никита, это уже вариант с подменой голоса. Работает чуть дольше по времени, чем оригинальная версия, но зато работает." \
+  -F top_p="0.1" \
   -F repetition_penalty="1.3" \
   -F temperature="0.75" \
   -F chunk_length="150" \
