@@ -22,5 +22,5 @@ def save_temp_audio(content: bytes) -> str:
         return temp_file_path
 
     except Exception as e:
-        logger.error(f"Failed to save temporary audio file: {e}")
+        logger.exception(f"Failed to save temporary audio file: {e}")
         raise

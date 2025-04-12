@@ -10,6 +10,8 @@ import gc
 from contextlib import contextmanager
 from huggingface_hub import snapshot_download
 
+from fish_speech_api.utils import get_temp_file  # <- utility for temp file creation
+
 FISH_SPEECH_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fish_speech")
 sys.path.append(FISH_SPEECH_DIR)
 
@@ -42,6 +44,7 @@ def download_models(cache_dir="./models/fish-speech-1.5", local_only=True):
 
 
 def encode_reference_audio(reference_audio_path, temp_dir, device="cuda"):
+    # Load and normalize audio
     waveform, sample_rate = torchaudio.load(reference_audio_path)
     waveform = waveform.to(device)
 
@@ -49,13 +52,15 @@ def encode_reference_audio(reference_audio_path, temp_dir, device="cuda"):
         waveform = waveform / waveform.abs().max()
 
     audio_int16 = (waveform * 32767).to(torch.int16).cpu().numpy()
-    normalized_path = os.path.join(temp_dir, "normalized_ref.wav")
-    sf.write(normalized_path, audio_int16.T, sample_rate)
 
-    reference_tokens_path = os.path.join(temp_dir, "reference_tokens.npy")
-    vqgan_inference.encode_audio(normalized_path, reference_tokens_path)
+    # Save normalized audio to a temp file
+    with get_temp_file(suffix=".wav", dir=temp_dir) as norm_audio_file:
+        sf.write(norm_audio_file.name, audio_int16.T, sample_rate)
 
-    return reference_tokens_path
+        # Save reference tokens to a temp file
+        with get_temp_file(suffix=".npy", dir=temp_dir) as ref_token_file:
+            vqgan_inference.encode_audio(norm_audio_file.name, ref_token_file.name)
+            return ref_token_file.name  # return path to tokens
 
 
 def generate_semantic_tokens(
@@ -68,31 +73,34 @@ def generate_semantic_tokens(
     compile_model=False,
     num_samples=1,
 ):
-    semantic_tokens_path = os.path.join(temp_dir, "codes_0.npy")
-    args = [
-        "--text", text,
-        "--checkpoint-path", checkpoint_path,
-        "--device", device,
-        "--num-samples", str(num_samples),
-        "--output-dir", temp_dir
-    ]
+    # Generate semantic token output file path
+    with get_temp_file(suffix=".npy", dir=temp_dir) as semantic_token_file:
+        semantic_tokens_path = semantic_token_file.name
 
-    if prompt_tokens:
-        args.extend(["--prompt-tokens", prompt_tokens])
+        args = [
+            "--text", text,
+            "--checkpoint-path", checkpoint_path,
+            "--device", device,
+            "--num-samples", str(num_samples),
+            "--output-dir", temp_dir
+        ]
 
-    if prompt_text:
-        args.extend(["--prompt-text", prompt_text])
+        if prompt_tokens:
+            args.extend(["--prompt-tokens", prompt_tokens])
 
-    if compile_model:
-        args.append("--compile")
+        if prompt_text:
+            args.extend(["--prompt-text", prompt_text])
 
-    with temporary_argv(["inference.py"] + args):
-        try:
-            text2semantic_main()
-        except SystemExit:
-            pass
+        if compile_model:
+            args.append("--compile")
 
-    return semantic_tokens_path
+        with temporary_argv(["inference.py"] + args):
+            try:
+                text2semantic_main()
+            except SystemExit:
+                pass
+
+        return semantic_tokens_path
 
 
 def generate_speech_from_tokens(tokens_path, checkpoint_path, output_path, device="cuda"):
@@ -132,11 +140,15 @@ def text_to_speech(
     decoder_ckpt = os.path.join(checkpoint_dir, "firefly-gan-vq-fsq-8x1024-21hz-generator.pth")
 
     with tempfile.TemporaryDirectory() as temp_dir:
+        reference_tokens_path = None
+        semantic_tokens_path = None
+
         try:
-            reference_tokens_path = None
+            # Generate reference tokens if reference audio provided
             if reference_audio_path:
                 reference_tokens_path = encode_reference_audio(reference_audio_path, temp_dir, device)
 
+            # Generate semantic tokens
             semantic_tokens_path = generate_semantic_tokens(
                 text=text,
                 checkpoint_path=llama_ckpt,
@@ -146,6 +158,7 @@ def text_to_speech(
                 compile_model=compile_model
             )
 
+            # Generate waveform
             generate_speech_from_tokens(
                 tokens_path=semantic_tokens_path,
                 checkpoint_path=decoder_ckpt,
@@ -162,3 +175,8 @@ def text_to_speech(
 
         finally:
             clear_gpu_memory()
+            # Explicit cleanup if needed
+            if os.path.exists(reference_tokens_path or ""):
+                os.remove(reference_tokens_path)
+            if os.path.exists(semantic_tokens_path or ""):
+                os.remove(semantic_tokens_path)
