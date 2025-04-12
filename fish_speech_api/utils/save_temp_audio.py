@@ -5,9 +5,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def get_temp_file(suffix=".wav", dir="temp"):
+    return tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir=dir)
+
+
 def save_temp_audio(content: bytes) -> str:
     try:
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav", dir="temp")
+        temp_file = get_temp_file()
         temp_file.write(content)
         temp_file_path = temp_file.name
         temp_file.close()
