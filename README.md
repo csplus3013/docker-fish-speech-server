@@ -87,8 +87,8 @@ curl http://gpu02:8000/v1/audio/speech \
   -X POST \
   -H 'Content-Type: multipart/form-data' \
   -F model="fish-speech-1.5" \
-  -F input="Hello, this is a test of Fish Speech API" \
-  -F reference_audio="@voice-viola.wav" \
+  -F input="Никита, это уже вариант с подменой голоса. Работает чуть дольше по времени, чем оригинальная версия, но зато работает." \
+  -F reference_audio="@./audio_2025-04-12_21-01-04.wav" \
   --output "speech.wav"
 ```
 
