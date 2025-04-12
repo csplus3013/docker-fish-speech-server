@@ -5,8 +5,7 @@ x-shared-logs: &shared-logs
       max-size: "10k"
 
 services:
-
-  server:
+  api:
     restart: "unless-stopped"
     build:
       context: .
