@@ -12,9 +12,9 @@ def generate_tts(text, model_name, voice_sample=None, voice_name=None, instructi
     model_paths = get_model_paths(model_name)
 
     # Reference voice
-    reference_path = None
+    reference_audio_path = None
     if voice_sample:
-        reference_path = save_temp_audio(voice_sample)
+        reference_audio_path = save_temp_audio(voice_sample)
 
     # Output file
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav", dir="temp") as out_file:
@@ -24,7 +24,7 @@ def generate_tts(text, model_name, voice_sample=None, voice_name=None, instructi
     text_to_speech(
         text=text,
         output_path=output_path,
-        reference_audio=reference_path,
+        reference_audio_path=reference_audio_path,
         checkpoint_dir=model_paths["path"],
         device="cuda"
     )

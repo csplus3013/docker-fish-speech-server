@@ -73,7 +73,7 @@ python main.py
 Generate speech with default voice:
 
 ```shell
-curl http://gpu02:8000/v1/audio/speech \
+curl http://localhost:8000/v1/audio/speech \
   -X POST \
   -F model="fish-speech-1.5" \
   -F input="Hello, this is a test of Fish Speech API" \
@@ -83,7 +83,7 @@ curl http://gpu02:8000/v1/audio/speech \
 Generate speech with voice style transfer:
 
 ```shell
-curl http://gpu02:8000/v1/audio/speech \
+curl http://localhost:8000/v1/audio/speech \
   -X POST \
   -H 'Content-Type: multipart/form-data' \
   -F model="fish-speech-1.5" \
