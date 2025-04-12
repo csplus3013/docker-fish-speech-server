@@ -52,7 +52,7 @@ def download_models(cache_dir="./models/fish-speech-1.5", local_only=True):
         return None
 
 
-def encode_reference_audio(reference_audio_path, temp_dir, device="cuda"):
+def encode_reference_audio(reference_audio_path, temp_dir, checkpoint_path, device="cuda"):
     logger.info("Encoding reference audio...")
 
     # Normalize waveform
@@ -76,6 +76,7 @@ def encode_reference_audio(reference_audio_path, temp_dir, device="cuda"):
         "inference.py",
         "--input-path", normalized_path,
         "--output-path", reference_tokens_base + ".wav",  # Add .wav to satisfy soundfile
+        "--checkpoint-path", checkpoint_path,
         "--device", device
     ]
 
