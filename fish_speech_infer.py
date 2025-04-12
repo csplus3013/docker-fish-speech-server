@@ -52,8 +52,10 @@ def download_models(cache_dir="./models/fish-speech-1.5", local_only=True):
         return None
 
 
-def encode_reference_audio(reference_audio_path, temp_dir, device="cuda"):
+def encode_reference_audio(reference_audio_path, temp_dir, checkpoint_path, device="cuda"):
     logger.info("Encoding reference audio...")
+
+    # Normalize the waveform
     waveform, sample_rate = torchaudio.load(reference_audio_path)
     waveform = waveform.to(device)
 
@@ -61,14 +63,31 @@ def encode_reference_audio(reference_audio_path, temp_dir, device="cuda"):
         waveform = waveform / waveform.abs().max()
 
     audio_int16 = (waveform * 32767).to(torch.int16).cpu().numpy()
+
+    # Save normalized audio to a temporary file
     normalized_path = os.path.join(temp_dir, "normalized_ref.wav")
     sf.write(normalized_path, audio_int16.T, sample_rate)
     logger.debug(f"Normalized audio saved at: {normalized_path}")
 
-    reference_tokens_path = os.path.join(temp_dir, "reference_tokens.npy")
-    vqgan_inference.encode_audio(normalized_path, reference_tokens_path)
-    logger.debug(f"Reference tokens saved at: {reference_tokens_path}")
+    # The VQGAN inference script saves indices as output_path + ".npy"
+    reference_tokens_base = os.path.join(temp_dir, "reference_tokens")
+    reference_tokens_path = reference_tokens_base + ".npy"
 
+    # Prepare sys.argv for the VQGAN CLI call
+    sys.argv = [
+        "inference.py",
+        "--input-path", normalized_path,
+        "--output-path", reference_tokens_base,
+        "--checkpoint-path", checkpoint_path,
+        "--device", device
+    ]
+
+    try:
+        vqgan_inference.main()
+    except SystemExit:
+        logger.debug("vqgan_inference.main() exited with SystemExit (normal for CLI entrypoints).")
+
+    logger.debug(f"Reference tokens saved at: {reference_tokens_path}")
     return reference_tokens_path
 
 
@@ -160,7 +179,12 @@ def text_to_speech(
         try:
             reference_tokens_path = None
             if reference_audio_path:
-                reference_tokens_path = encode_reference_audio(reference_audio_path, temp_dir, device)
+                reference_tokens_path = encode_reference_audio(
+                    reference_audio_path=reference_audio_path,
+                    temp_dir=temp_dir,
+                    checkpoint_path=decoder_ckpt,
+                    device=device
+                )
 
             semantic_tokens_path = generate_semantic_tokens(
                 text=text,
