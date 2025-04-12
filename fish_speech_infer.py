@@ -4,11 +4,12 @@ import time
 import torch
 import soundfile as sf
 import torchaudio
+import tempfile
+import shutil
 import gc
 from contextlib import contextmanager
 from huggingface_hub import snapshot_download
 
-# Add fish-speech source to sys.path
 FISH_SPEECH_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fish_speech")
 sys.path.append(FISH_SPEECH_DIR)
 
@@ -40,9 +41,7 @@ def download_models(cache_dir="./models/fish-speech-1.5", local_only=True):
         return None
 
 
-def encode_reference_audio(reference_audio_path, output_path="temp/reference_tokens.npy", device="cuda"):
-    os.makedirs("temp", exist_ok=True)
-
+def encode_reference_audio(reference_audio_path, temp_dir, device="cuda"):
     waveform, sample_rate = torchaudio.load(reference_audio_path)
     waveform = waveform.to(device)
 
@@ -50,32 +49,32 @@ def encode_reference_audio(reference_audio_path, output_path="temp/reference_tok
         waveform = waveform / waveform.abs().max()
 
     audio_int16 = (waveform * 32767).to(torch.int16).cpu().numpy()
-    sf.write(reference_audio_path, audio_int16.T, sample_rate)
+    normalized_path = os.path.join(temp_dir, "normalized_ref.wav")
+    sf.write(normalized_path, audio_int16.T, sample_rate)
 
-    vqgan_inference.encode_audio(reference_audio_path, output_path)
+    reference_tokens_path = os.path.join(temp_dir, "reference_tokens.npy")
+    vqgan_inference.encode_audio(normalized_path, reference_tokens_path)
 
-    os.remove(reference_audio_path)
-    return output_path
+    return reference_tokens_path
 
 
 def generate_semantic_tokens(
     text,
     checkpoint_path,
-    output_path="temp/codes_0.npy",
+    temp_dir,
     prompt_tokens=None,
     prompt_text=None,
     device="cuda",
     compile_model=False,
     num_samples=1,
 ):
-    os.makedirs("temp", exist_ok=True)
-
+    semantic_tokens_path = os.path.join(temp_dir, "codes_0.npy")
     args = [
         "--text", text,
         "--checkpoint-path", checkpoint_path,
         "--device", device,
         "--num-samples", str(num_samples),
-        "--output-dir", "temp"
+        "--output-dir", temp_dir
     ]
 
     if prompt_tokens:
@@ -93,7 +92,7 @@ def generate_semantic_tokens(
         except SystemExit:
             pass
 
-    return output_path
+    return semantic_tokens_path
 
 
 def generate_speech_from_tokens(tokens_path, checkpoint_path, output_path="output.wav", device="cuda"):
@@ -111,6 +110,14 @@ def generate_speech_from_tokens(tokens_path, checkpoint_path, output_path="outpu
     return output_path
 
 
+def clear_gpu_memory():
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        if hasattr(torch.cuda, 'ipc_collect'):
+            torch.cuda.ipc_collect()
+
+
 def text_to_speech(
     text,
     output_path="output.wav",
@@ -123,43 +130,34 @@ def text_to_speech(
     llama_ckpt = checkpoint_dir
     decoder_ckpt = os.path.join(checkpoint_dir, "firefly-gan-vq-fsq-8x1024-21hz-generator.pth")
 
-    reference_tokens_path = None
-    if reference_audio_path:
-        reference_tokens_path = "temp/reference_tokens.npy"
-        encode_reference_audio(reference_audio_path, reference_tokens_path, device)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        try:
+            reference_tokens_path = None
+            if reference_audio_path:
+                reference_tokens_path = encode_reference_audio(reference_audio_path, temp_dir, device)
 
-    semantic_tokens_path = "temp/codes_0.npy"
-    generate_semantic_tokens(
-        text=text,
-        checkpoint_path=llama_ckpt,
-        output_path=semantic_tokens_path,
-        prompt_tokens=reference_tokens_path,
-        device=device,
-        compile_model=compile_model
-    )
+            semantic_tokens_path = generate_semantic_tokens(
+                text=text,
+                checkpoint_path=llama_ckpt,
+                temp_dir=temp_dir,
+                prompt_tokens=reference_tokens_path,
+                device=device,
+                compile_model=compile_model
+            )
 
-    print(semantic_tokens_path)
+            generate_speech_from_tokens(
+                tokens_path=semantic_tokens_path,
+                checkpoint_path=decoder_ckpt,
+                output_path=output_path,
+                device=device
+            )
 
-    generate_speech_from_tokens(
-        tokens_path=semantic_tokens_path,
-        checkpoint_path=decoder_ckpt,
-        output_path=output_path,
-        device=device
-    )
+            print(f"[INFO] Inference completed in {time.time() - start:.2f} seconds")
+            return output_path
 
-    # Cleanup
-    if os.path.exists(semantic_tokens_path):
-        os.remove(semantic_tokens_path)
-    if reference_tokens_path and os.path.exists(reference_tokens_path):
-        os.remove(reference_tokens_path)
+        except Exception as e:
+            print(f"[ERROR] TTS failed: {e}")
+            raise
 
-    print(f"[INFO] Inference completed in {time.time() - start:.2f} seconds")
-    return output_path
-
-
-def clear_gpu_memory():
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-        if hasattr(torch.cuda, 'ipc_collect'):
-            torch.cuda.ipc_collect()
+        finally:
+            clear_gpu_memory()
