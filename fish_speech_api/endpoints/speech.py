@@ -20,6 +20,12 @@ async def speech_endpoint(
     input: str = Form(...),
     voice: str = Form(None),
     instructions: str = Form(None),
+    top_p: float = Form(0.7),
+    repetition_penalty: float = Form(1.2),
+    temperature: float = Form(0.7),
+    chunk_length: int = Form(200),
+    max_new_tokens: int = Form(1024),
+    seed: int = Form(None),
     reference_audio: UploadFile = File(None)
 ):
     logger.info(f"Received TTS request - model: {model}, voice: {voice}")
@@ -37,7 +43,13 @@ async def speech_endpoint(
             model_name=model,
             voice_sample=audio_bytes,
             voice_name=voice,
-            instructions=instructions
+            instructions=instructions,
+            top_p=top_p,
+            repetition_penalty=repetition_penalty,
+            temperature=temperature,
+            chunk_length=chunk_length,
+            max_new_tokens=max_new_tokens,
+            seed=seed
         )
         logger.info(f"TTS generation completed. Output file: {output_path}")
 

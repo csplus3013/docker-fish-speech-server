@@ -92,6 +92,24 @@ curl http://gpu02:8000/v1/audio/speech \
   --output "speech.wav"
 ```
 
+Advanced settings:
+
+```shell
+curl http://gpu02:8000/v1/audio/speech \
+  -X POST \
+  -H 'Content-Type: multipart/form-data' \
+  -F model="fish-speech-1.5" \
+  -F input="Привет! Это тест голоса." \
+  -F top_p="0.8" \
+  -F repetition_penalty="1.3" \
+  -F temperature="0.75" \
+  -F chunk_length="150" \
+  -F max_new_tokens="768" \
+  -F seed="42" \
+  -F reference_audio="@./audio_2025-04-12_21-01-04.wav" \
+  --output "speech.wav"
+```
+
 ## Links
 
 - https://github.com/fishaudio/fish-speech

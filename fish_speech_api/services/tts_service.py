@@ -13,7 +13,19 @@ logging.basicConfig(
 logger = logging.getLogger("fish_speech_api.services.tts_service")
 
 
-def generate_tts(text, model_name, voice_sample=None, voice_name=None, instructions=None):
+def generate_tts(
+    text,
+    model_name,
+    voice_sample=None,
+    voice_name=None,
+    instructions=None,
+    top_p=0.7,
+    repetition_penalty=1.2,
+    temperature=0.7,
+    chunk_length=200,
+    max_new_tokens=1024,
+    seed=None
+):
     logger.info(f"Starting TTS generation for model: {model_name}")
 
     model_paths = get_model_paths(model_name)

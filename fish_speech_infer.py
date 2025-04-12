@@ -102,6 +102,12 @@ def generate_semantic_tokens(
     device="cuda",
     compile_model=False,
     num_samples=1,
+    top_p=0.7,
+    repetition_penalty=1.2,
+    temperature=0.7,
+    chunk_length=200,
+    max_new_tokens=1024,
+    seed=None,
 ):
     logger.info("Generating semantic tokens...")
     semantic_tokens_path = os.path.join(temp_dir, "codes_0.npy")
@@ -111,18 +117,23 @@ def generate_semantic_tokens(
         "--checkpoint-path", checkpoint_path,
         "--device", device,
         "--num-samples", str(num_samples),
-        "--output-dir", temp_dir
+        "--output-dir", temp_dir,
+        "--top-p", str(top_p),
+        "--repetition-penalty", str(repetition_penalty),
+        "--temperature", str(temperature),
+        "--chunk-length", str(chunk_length),
+        "--max-new-tokens", str(max_new_tokens),
     ]
 
     if prompt_tokens:
         args.extend(["--prompt-tokens", prompt_tokens])
-        args.extend(["--prompt-text", text])  # ✅ fix: provide prompt text too
-
-    if prompt_text:
-        args.extend(["--prompt-text", prompt_text])
+        args.extend(["--prompt-text", prompt_text or text])
 
     if compile_model:
         args.append("--compile")
+
+    if seed is not None:
+        args.extend(["--seed", str(seed)])
 
     logger.debug(f"Inference args: {args}")
 
@@ -172,7 +183,13 @@ def text_to_speech(
     reference_audio_path=None,
     checkpoint_dir="./models/fish-speech-1.5",
     device="cuda",
-    compile_model=False
+    compile_model=False,
+    top_p=0.7,
+    repetition_penalty=1.2,
+    temperature=0.7,
+    chunk_length=200,
+    max_new_tokens=1024,
+    seed=None,
 ):
     logger.info("Starting text-to-speech pipeline...")
     start = time.time()
@@ -196,8 +213,15 @@ def text_to_speech(
                 checkpoint_path=llama_ckpt,
                 temp_dir=temp_dir,
                 prompt_tokens=reference_tokens_path,
+                prompt_text=text,
                 device=device,
-                compile_model=compile_model
+                compile_model=compile_model,
+                top_p=top_p,
+                repetition_penalty=repetition_penalty,
+                temperature=temperature,
+                chunk_length=chunk_length,
+                max_new_tokens=max_new_tokens,
+                seed=seed,
             )
 
             generate_speech_from_tokens(
