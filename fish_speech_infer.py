@@ -7,8 +7,17 @@ import torchaudio
 import tempfile
 import shutil
 import gc
+import logging
 from contextlib import contextmanager
 from huggingface_hub import snapshot_download
+
+# Configure logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] [%(name)s] [%(levelname)s] - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger = logging.getLogger("fish_speech_infer")
 
 FISH_SPEECH_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fish_speech")
 sys.path.append(FISH_SPEECH_DIR)
@@ -29,19 +38,22 @@ def temporary_argv(new_argv):
 
 
 def download_models(cache_dir="./models/fish-speech-1.5", local_only=True):
+    logger.info(f"Downloading model into: {cache_dir}")
     try:
         repo_dir = snapshot_download(
             repo_id="fishaudio/fish-speech-1.5",
             cache_dir=cache_dir,
             local_files_only=local_only
         )
+        logger.info("Model download completed successfully.")
         return repo_dir
     except Exception as e:
-        print(f"Model download failed: {e}")
+        logger.error(f"Model download failed: {e}")
         return None
 
 
 def encode_reference_audio(reference_audio_path, temp_dir, device="cuda"):
+    logger.info("Encoding reference audio...")
     waveform, sample_rate = torchaudio.load(reference_audio_path)
     waveform = waveform.to(device)
 
@@ -51,9 +63,11 @@ def encode_reference_audio(reference_audio_path, temp_dir, device="cuda"):
     audio_int16 = (waveform * 32767).to(torch.int16).cpu().numpy()
     normalized_path = os.path.join(temp_dir, "normalized_ref.wav")
     sf.write(normalized_path, audio_int16.T, sample_rate)
+    logger.debug(f"Normalized audio saved at: {normalized_path}")
 
     reference_tokens_path = os.path.join(temp_dir, "reference_tokens.npy")
     vqgan_inference.encode_audio(normalized_path, reference_tokens_path)
+    logger.debug(f"Reference tokens saved at: {reference_tokens_path}")
 
     return reference_tokens_path
 
@@ -68,7 +82,9 @@ def generate_semantic_tokens(
     compile_model=False,
     num_samples=1,
 ):
+    logger.info("Generating semantic tokens...")
     semantic_tokens_path = os.path.join(temp_dir, "codes_0.npy")
+
     args = [
         "--text", text,
         "--checkpoint-path", checkpoint_path,
@@ -79,24 +95,27 @@ def generate_semantic_tokens(
 
     if prompt_tokens:
         args.extend(["--prompt-tokens", prompt_tokens])
-
     if prompt_text:
         args.extend(["--prompt-text", prompt_text])
-
     if compile_model:
         args.append("--compile")
+
+    logger.debug(f"Inference args: {args}")
 
     with temporary_argv(["inference.py"] + args):
         try:
             text2semantic_main()
         except SystemExit:
-            pass
+            logger.debug("text2semantic_main() exited with SystemExit (normal for CLI entrypoints).")
 
+    logger.debug(f"Semantic tokens saved at: {semantic_tokens_path}")
     return semantic_tokens_path
 
 
 def generate_speech_from_tokens(tokens_path, checkpoint_path, output_path, device="cuda"):
+    logger.info("Generating waveform from semantic tokens...")
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
     sys.argv = [
         "inference.py",
         "--input-path", tokens_path,
@@ -104,14 +123,18 @@ def generate_speech_from_tokens(tokens_path, checkpoint_path, output_path, devic
         "--checkpoint-path", checkpoint_path,
         "--device", device
     ]
+
     try:
         vqgan_inference.main()
     except SystemExit:
-        pass
+        logger.debug("vqgan_inference.main() exited with SystemExit (normal for CLI entrypoints).")
+
+    logger.info(f"Waveform saved to: {output_path}")
     return output_path
 
 
 def clear_gpu_memory():
+    logger.debug("Clearing GPU memory...")
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
@@ -127,7 +150,9 @@ def text_to_speech(
     device="cuda",
     compile_model=False
 ):
+    logger.info("Starting text-to-speech pipeline...")
     start = time.time()
+
     llama_ckpt = checkpoint_dir
     decoder_ckpt = os.path.join(checkpoint_dir, "firefly-gan-vq-fsq-8x1024-21hz-generator.pth")
 
@@ -153,11 +178,12 @@ def text_to_speech(
                 device=device
             )
 
-            print(f"[INFO] Inference completed in {time.time() - start:.2f} seconds")
+            elapsed = time.time() - start
+            logger.info(f"Inference completed in {elapsed:.2f} seconds")
             return output_path
 
         except Exception as e:
-            print(f"[ERROR] TTS failed: {e}")
+            logger.exception(f"TTS pipeline failed: {e}")
             raise
 
         finally:
