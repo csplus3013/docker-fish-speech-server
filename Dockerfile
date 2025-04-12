@@ -13,7 +13,9 @@ RUN set -xe \
 # Install dependencies
 RUN set -xe \
  && apt update -q \
- && apt install -fyq bash cmake portaudio19-dev \
+ && apt install -fyq \
+        bash cmake portaudio19-dev \
+        python3 python3-pip time \
  && apt clean
 
 # Install Python packages
