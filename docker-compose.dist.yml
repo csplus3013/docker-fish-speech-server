@@ -4,6 +4,16 @@ x-shared-logs: &shared-logs
     options:
       max-size: "10k"
 
+x-shared-deploy: &shared-deploy
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities: [ gpu ]
+  <<: *shared-logs
+
 services:
   api:
     restart: "unless-stopped"
@@ -11,4 +21,4 @@ services:
       context: .
     ports:
       - "8000:8000"
-    <<: *shared-logs
+    <<: *shared-deploy

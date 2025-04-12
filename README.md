@@ -1,3 +1,14 @@
+## How to Use
+
+### Docker-way
+
+```shell
+cp docker-compose.dist.yml docker-compose.yml
+docker-compose up -d
+```
+
+### Manual
+
 ```shell
 apt install cmake portaudio19-dev
 ```
