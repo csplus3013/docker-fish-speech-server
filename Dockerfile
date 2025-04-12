@@ -14,7 +14,7 @@ RUN set -xe \
 RUN set -xe \
  && apt update -q \
  && apt install -fyq \
-        bash cmake portaudio19-dev \
+        bash git cmake portaudio19-dev \
         python3 python3-pip time \
  && apt clean
 
