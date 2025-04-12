@@ -116,8 +116,11 @@ def generate_semantic_tokens(
 
     if prompt_tokens:
         args.extend(["--prompt-tokens", prompt_tokens])
+        args.extend(["--prompt-text", text])  # ✅ fix: provide prompt text too
+
     if prompt_text:
         args.extend(["--prompt-text", prompt_text])
+
     if compile_model:
         args.append("--compile")
 
