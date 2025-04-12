@@ -1,10 +1,20 @@
-import os
-import uuid
+import tempfile
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def save_temp_audio(content: bytes) -> str:
-    os.makedirs("temp", exist_ok=True)
-    path = os.path.join("temp", f"{uuid.uuid4().hex}.wav")
-    with open(path, "wb") as f:
-        f.write(content)
-    return path
+    try:
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav", dir="temp")
+        temp_file.write(content)
+        temp_file_path = temp_file.name
+        temp_file.close()
+
+        logger.info(f"Temporary audio file saved at: {temp_file_path}")
+        return temp_file_path
+
+    except Exception as e:
+        logger.error(f"Failed to save temporary audio file: {e}")
+        raise

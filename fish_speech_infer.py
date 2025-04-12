@@ -40,25 +40,21 @@ def download_models(cache_dir="./models/fish-speech-1.5", local_only=True):
         return None
 
 
-def encode_reference_audio(audio_bytes, output_path="temp/reference_tokens.npy", device="cuda"):
+def encode_reference_audio(reference_audio_path, output_path="temp/reference_tokens.npy", device="cuda"):
     os.makedirs("temp", exist_ok=True)
-    temp_wav_path = "temp/ref.wav"
 
-    with open(temp_wav_path, "wb") as f:
-        f.write(audio_bytes)
-
-    waveform, sample_rate = torchaudio.load(temp_wav_path)
+    waveform, sample_rate = torchaudio.load(reference_audio_path)
     waveform = waveform.to(device)
 
     if waveform.abs().max() > 1.0:
         waveform = waveform / waveform.abs().max()
 
     audio_int16 = (waveform * 32767).to(torch.int16).cpu().numpy()
-    sf.write(temp_wav_path, audio_int16.T, sample_rate)
+    sf.write(reference_audio_path, audio_int16.T, sample_rate)
 
-    vqgan_inference.encode_audio(temp_wav_path, output_path)
+    vqgan_inference.encode_audio(reference_audio_path, output_path)
 
-    os.remove(temp_wav_path)
+    os.remove(reference_audio_path)
     return output_path
 
 
@@ -118,7 +114,7 @@ def generate_speech_from_tokens(tokens_path, checkpoint_path, output_path="outpu
 def text_to_speech(
     text,
     output_path="output.wav",
-    reference_audio=None,
+    reference_audio_path=None,
     checkpoint_dir="./models/fish-speech-1.5",
     device="cuda",
     compile_model=False
@@ -128,9 +124,9 @@ def text_to_speech(
     decoder_ckpt = os.path.join(checkpoint_dir, "firefly-gan-vq-fsq-8x1024-21hz-generator.pth")
 
     reference_tokens_path = None
-    if reference_audio:
+    if reference_audio_path:
         reference_tokens_path = "temp/reference_tokens.npy"
-        encode_reference_audio(reference_audio, reference_tokens_path, device)
+        encode_reference_audio(reference_audio_path, reference_tokens_path, device)
 
     semantic_tokens_path = "temp/codes_0.npy"
     generate_semantic_tokens(

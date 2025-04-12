@@ -83,12 +83,12 @@ curl http://gpu02:8000/v1/audio/speech \
 Generate speech with voice style transfer:
 
 ```shell
-curl http://localhost:8000/v1/audio/speech \
+curl http://gpu02:8000/v1/audio/speech \
   -X POST \
+  -H 'Content-Type: multipart/form-data' \
   -F model="fish-speech-1.5" \
   -F input="Hello, this is a test of Fish Speech API" \
-  -F instructions="cheerful" \
-  -F reference_audio="@reference.wav" \
+  -F reference_audio="@voice-viola.wav" \
   --output "speech.wav"
 ```
 

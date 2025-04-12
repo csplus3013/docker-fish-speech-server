@@ -1,6 +1,7 @@
+/models/*/
 /.idea/
 /.venv/
 /docker-compose.yml
 __pycache__
 *.wav
-/models/*/
+*.mp3
