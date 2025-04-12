@@ -7,6 +7,16 @@ cp docker-compose.dist.yml docker-compose.yml
 docker-compose up -d
 ```
 
+```shell
+docker-compos exec api bash
+```
+
+Download model:
+
+```shell
+huggingface-cli download fishaudio/fish-speech-1.5 --local-dir models/fish-speech-1.5/
+```
+
 ### Manual
 
 ```shell

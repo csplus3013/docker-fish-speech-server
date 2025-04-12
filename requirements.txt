@@ -13,6 +13,7 @@ tiktoken~=0.9.0
 
 # Audio generation
 torchaudio~=2.6.0
+vector_quantize_pytorch==1.14.24
 soundfile~=0.13.1
 loguru~=0.7.3
 einops~=0.8.1
