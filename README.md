@@ -32,7 +32,7 @@ huggingface-cli download fishaudio/fish-speech-1.5 --local-dir models/fish-speec
 Using default model:
 
 ```shell
-curl http://localhost:8000/v1/audio/speech \
+curl http://gpu02:8000/v1/audio/speech \
   -X POST \
   -F model="fish-speech-1.5" \
   -F input="Hello, this is a test of Fish Speech API" \
