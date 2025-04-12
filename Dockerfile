@@ -25,6 +25,8 @@ RUN set -xe \
 
 # Copy sources
 COPY . .
+RUN set -xe \
+ && git submodule update --init --recursive
 RUN chmod +x /app/entrypoint.sh
 
 ENTRYPOINT ["/app/entrypoint.sh"]
