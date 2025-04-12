@@ -17,9 +17,7 @@ def generate_tts(text, model_name, voice_sample=None, voice_name=None, instructi
         reference_audio_path = save_temp_audio(voice_sample)
 
     # Output file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav", dir="temp") as out_file:
-        output_path = out_file.name
-        logger.debug("Output file will be saved to: %s", output_path)
+    output_path = "temp/output.wav"
 
     text_to_speech(
         text=text,
