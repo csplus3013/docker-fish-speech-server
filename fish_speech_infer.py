@@ -52,10 +52,10 @@ def download_models(cache_dir="./models/fish-speech-1.5", local_only=True):
         return None
 
 
-def encode_reference_audio(reference_audio_path, temp_dir, checkpoint_path, device="cuda"):
+def encode_reference_audio(reference_audio_path, temp_dir, device="cuda"):
     logger.info("Encoding reference audio...")
 
-    # Normalize the waveform
+    # Normalize waveform
     waveform, sample_rate = torchaudio.load(reference_audio_path)
     waveform = waveform.to(device)
 
@@ -63,22 +63,19 @@ def encode_reference_audio(reference_audio_path, temp_dir, checkpoint_path, devi
         waveform = waveform / waveform.abs().max()
 
     audio_int16 = (waveform * 32767).to(torch.int16).cpu().numpy()
-
-    # Save normalized audio to a temporary file
     normalized_path = os.path.join(temp_dir, "normalized_ref.wav")
     sf.write(normalized_path, audio_int16.T, sample_rate)
     logger.debug(f"Normalized audio saved at: {normalized_path}")
 
-    # The VQGAN inference script saves indices as output_path + ".npy"
+    # Ensure output base path has NO extension, but .npy will be added by inference.py
     reference_tokens_base = os.path.join(temp_dir, "reference_tokens")
     reference_tokens_path = reference_tokens_base + ".npy"
 
-    # Prepare sys.argv for the VQGAN CLI call
+    # Run VQGAN inference to encode audio into tokens
     sys.argv = [
         "inference.py",
         "--input-path", normalized_path,
-        "--output-path", reference_tokens_base,
-        "--checkpoint-path", checkpoint_path,
+        "--output-path", reference_tokens_base + ".wav",  # Add .wav to satisfy soundfile
         "--device", device
     ]
 
@@ -86,6 +83,10 @@ def encode_reference_audio(reference_audio_path, temp_dir, checkpoint_path, devi
         vqgan_inference.main()
     except SystemExit:
         logger.debug("vqgan_inference.main() exited with SystemExit (normal for CLI entrypoints).")
+
+    # Ensure .npy was created
+    if not os.path.exists(reference_tokens_path):
+        raise RuntimeError(f"Reference tokens were not generated at: {reference_tokens_path}")
 
     logger.debug(f"Reference tokens saved at: {reference_tokens_path}")
     return reference_tokens_path
