@@ -71,7 +71,7 @@ python main.py
 ## 🧪 Testing the API
 
 Generate speech with default voice:
-
+  
 ```shell
 curl http://gpu02:8000/v1/audio/speech \
   -X POST \

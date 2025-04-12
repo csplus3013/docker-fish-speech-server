@@ -95,7 +95,8 @@ def generate_semantic_tokens(
     return semantic_tokens_path
 
 
-def generate_speech_from_tokens(tokens_path, checkpoint_path, output_path="output.wav", device="cuda"):
+def generate_speech_from_tokens(tokens_path, checkpoint_path, output_path, device="cuda"):
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     sys.argv = [
         "inference.py",
         "--input-path", tokens_path,
