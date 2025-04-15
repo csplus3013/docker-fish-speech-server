@@ -20,8 +20,8 @@ Supports `text-to-speech` and voice style transfer via reference audio samples.
 Clone the repo first:
 
 ```shell
-git clone git@github.com:EvilFreelancer/fish-speech-api.git
-cd fish-speech-api
+git clone https://github.com/EvilFreelancer/docker-fish-speech-server.git
+cd docker-fish-speech-server
 ```
 
 ### Docker-way
