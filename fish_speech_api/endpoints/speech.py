@@ -19,32 +19,29 @@ router = APIRouter()
 
 @router.post("/audio/speech")
 async def speech_endpoint(
-    request: Request,
-    # body: dict = Form(...),
-    # model: str = Form(...),
-    # input: str = Form(...),
-    # voice: str = Form(default=None),
-    # top_p: float = Form(default=0.7, ge=0.0, le=1.0),
-    # repetition_penalty: float = Form(default=1.2, ge=1.0, le=2.0),
-    # temperature: float = Form(default=0.7, ge=0.0, le=1.0),
-    # chunk_length: int = Form(default=200, ge=50, le=500),
-    # max_new_tokens: int = Form(default=1024, ge=128, le=2048),
-    # seed: int = Form(default=None),
-    # reference_audio: UploadFile = File(default=None),
+    model: str = Form(...),
+    input: str = Form(...),
+    voice: str = Form(default=None),
+    top_p: float = Form(default=0.7),
+    repetition_penalty: float = Form(default=1.5),
+    temperature: float = Form(default=0.7),
+    chunk_length: int = Form(default=150),
+    max_new_tokens: int = Form(default=2048),
+    seed: int = Form(default=None),
+    reference_audio: UploadFile = File(default=None),
 ):
-    body = await request.json()
-    logger.info(f"Request body: {body}")
-
-    model = body.get("model", "")
-    input = body.get("input", "")
-    voice = body.get("voice", None)
-    top_p = body.get("top_p", 0.7)
-    repetition_penalty = body.get("repetition_penalty", 1.5)
-    reference_audio = body.get("reference_audio", None)
-    temperature = body.get("temperature", 0.7)
-    chunk_length = body.get("chunk_length", 150)
-    max_new_tokens = body.get("max_new_tokens", 2048)
-    seed = body.get("seed", None)
+    # body = await request.json()
+    # logger.info(f"Request body: {body}")
+    # model = body.get("model", "")
+    # input = body.get("input", "")
+    # voice = body.get("voice", None)
+    # top_p = body.get("top_p", 0.7)
+    # repetition_penalty = body.get("repetition_penalty", 1.5)
+    # reference_audio = body.get("reference_audio", None)
+    # temperature = body.get("temperature", 0.7)
+    # chunk_length = body.get("chunk_length", 150)
+    # max_new_tokens = body.get("max_new_tokens", 2048)
+    # seed = body.get("seed", None)
 
     logger.info(f"TTS request | Model: {model} | Chars: {len(input)}")
 
