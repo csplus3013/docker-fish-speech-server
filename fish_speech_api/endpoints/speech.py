@@ -38,6 +38,11 @@ async def speech_endpoint(
     voice = body.get("voice", None)
     top_p = body.get("top_p", 0.7)
     repetition_penalty = body.get("repetition_penalty", 1.2)
+    reference_audio = body.get("reference_audio", None)
+    temperature = body.get("temperature", 1.0)
+    chunk_length = body.get("chunk_length", 10)
+    max_new_tokens = body.get("max_new_tokens", 10)
+    seed = body.get("seed", None)
 
     logger.info(f"TTS request | Model: {model} | Chars: {len(input)}")
 
