@@ -59,7 +59,7 @@ async def speech_endpoint(
         # Обработка референсного аудио
         audio_bytes = None
         if reference_audio:
-            if not reference_audio.filename.lower().endswith(('.wav', '.mp3', '.flac')):
+            if not reference_audio.filename.lower().endswith('.wav'):
                 raise HTTPException(status_code=400, detail="Invalid audio format")
 
             audio_bytes = await reference_audio.read()
