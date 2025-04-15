@@ -7,7 +7,7 @@ app = FastAPI(
     description="OpenAI-compatible API for Fish Speech 1.5"
 )
 
-app.include_router(tts_router, prefix="/audio")
+app.include_router(tts_router)
 
 if __name__ == "__main__":
     import uvicorn

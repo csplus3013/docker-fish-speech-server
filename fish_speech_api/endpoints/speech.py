@@ -1,6 +1,9 @@
 import logging
+from pathlib import Path
+
 from fastapi import APIRouter, UploadFile, File, Form
 from fastapi.responses import FileResponse
+from fastapi.exceptions import HTTPException
 from fish_speech_api.services.tts_service import generate_tts
 
 # Configure logger for this module
@@ -14,36 +17,43 @@ logger = logging.getLogger("fish_speech_api.routes.speech")
 router = APIRouter()
 
 
-@router.post("/speech")
+@router.post("/audio/speech")  # Изменен путь эндпоинта
 async def speech_endpoint(
-    model: str = Form(...),
-    input: str = Form(...),
-    voice: str = Form(None),
-    instructions: str = Form(None),
-    top_p: float = Form(0.7),
-    repetition_penalty: float = Form(1.2),
-    temperature: float = Form(0.7),
-    chunk_length: int = Form(200),
-    max_new_tokens: int = Form(1024),
-    seed: int = Form(None),
-    reference_audio: UploadFile = File(None)
+    model: str = Form(default="fish-speech-1.5"),  # Добавлено значение по умолчанию
+    input: str = Form(..., min_length=1),  # Валидация минимальной длины
+    voice: str = Form(default=None),
+    top_p: float = Form(default=0.7, ge=0.0, le=1.0),  # Валидация диапазона
+    repetition_penalty: float = Form(default=1.2, ge=1.0, le=2.0),
+    temperature: float = Form(default=0.7, ge=0.0, le=1.0),
+    chunk_length: int = Form(default=200, ge=50, le=500),
+    max_new_tokens: int = Form(default=1024, ge=128, le=2048),
+    seed: int = Form(default=None),
+    reference_audio: UploadFile = File(default=None),
 ):
-    logger.info(f"Received TTS request - model: {model}, voice: {voice}")
+    logger.info(f"TTS request | Model: {model} | Chars: {len(input)}")
 
     try:
-        # Read uploaded reference audio if provided
-        audio_bytes = await reference_audio.read() if reference_audio else None
-        if reference_audio:
-            logger.info(f"Reference audio file received: {reference_audio.filename} ({len(audio_bytes)} bytes)")
+        # Валидация входных параметров
+        if len(input) > 4096:
+            raise HTTPException(status_code=400, detail="Input too long (max 4096 chars)")
 
-        # Call the TTS service
-        logger.info("Invoking TTS generation service...")
+        if reference_audio and reference_audio.size > 25 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Audio file too large (max 25MB)")
+
+        # Обработка референсного аудио
+        audio_bytes = None
+        if reference_audio:
+            if not reference_audio.filename.lower().endswith(('.wav', '.mp3', '.flac')):
+                raise HTTPException(status_code=400, detail="Invalid audio format")
+
+            audio_bytes = await reference_audio.read()
+            logger.info(f"Received reference audio: {len(audio_bytes)} bytes")
+
+        # Генерация речи
         output_path = generate_tts(
             text=input,
             model_name=model,
             voice_sample=audio_bytes,
-            voice_name=voice,
-            instructions=instructions,
             top_p=top_p,
             repetition_penalty=repetition_penalty,
             temperature=temperature,
@@ -51,15 +61,15 @@ async def speech_endpoint(
             max_new_tokens=max_new_tokens,
             seed=seed
         )
-        logger.info(f"TTS generation completed. Output file: {output_path}")
 
-        # Return audio file as response
         return FileResponse(
             path=output_path,
             media_type="audio/wav",
-            filename="speech.wav"
+            filename=Path(output_path).name
         )
 
+    except HTTPException as he:
+        raise he
     except Exception as e:
-        logger.exception(f"Error while handling TTS request: {e}")
-        return {"error": str(e)}
+        logger.error(f"Generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
