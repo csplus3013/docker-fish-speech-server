@@ -17,12 +17,12 @@ logger = logging.getLogger("fish_speech_api.routes.speech")
 router = APIRouter()
 
 
-@router.post("/audio/speech")  # Изменен путь эндпоинта
+@router.post("/audio/speech")
 async def speech_endpoint(
-    model: str = Form(default="fish-speech-1.5"),  # Добавлено значение по умолчанию
-    input: str = Form(..., min_length=1),  # Валидация минимальной длины
+    model: str = Form(...),
+    input: str = Form(...),
     voice: str = Form(default=None),
-    top_p: float = Form(default=0.7, ge=0.0, le=1.0),  # Валидация диапазона
+    top_p: float = Form(default=0.7, ge=0.0, le=1.0),
     repetition_penalty: float = Form(default=1.2, ge=1.0, le=2.0),
     temperature: float = Form(default=0.7, ge=0.0, le=1.0),
     chunk_length: int = Form(default=200, ge=50, le=500),
