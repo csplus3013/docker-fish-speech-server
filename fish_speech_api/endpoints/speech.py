@@ -30,19 +30,6 @@ async def speech_endpoint(
     seed: int = Form(default=None),
     reference_audio: UploadFile = File(default=None),
 ):
-    # body = await request.json()
-    # logger.info(f"Request body: {body}")
-    # model = body.get("model", "")
-    # input = body.get("input", "")
-    # voice = body.get("voice", None)
-    # top_p = body.get("top_p", 0.7)
-    # repetition_penalty = body.get("repetition_penalty", 1.5)
-    # reference_audio = body.get("reference_audio", None)
-    # temperature = body.get("temperature", 0.7)
-    # chunk_length = body.get("chunk_length", 150)
-    # max_new_tokens = body.get("max_new_tokens", 2048)
-    # seed = body.get("seed", None)
-
     logger.info(f"TTS request | Model: {model} | Chars: {len(input)}")
 
     try:
