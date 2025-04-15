@@ -1,4 +1,4 @@
-# 🐟 Fish Speech API
+# FishSpeech API Webserver in Docker
 
 OpenAPI-like voice generation server based on [fish-speech-1.5](https://huggingface.co/fishaudio/fish-speech-1.5).
 
@@ -71,7 +71,7 @@ python main.py
 ## 🧪 Testing the API
 
 Generate speech with default voice:
-  
+
 ```shell
 curl http://gpu02:8000/v1/audio/speech \
   -X POST \
