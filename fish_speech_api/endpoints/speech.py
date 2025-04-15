@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form, Request
 from fastapi.responses import FileResponse
 from fastapi.exceptions import HTTPException
 from fish_speech_api.services.tts_service import generate_tts
@@ -19,17 +19,26 @@ router = APIRouter()
 
 @router.post("/audio/speech")
 async def speech_endpoint(
-    model: str = Form(...),
-    input: str = Form(...),
-    voice: str = Form(default=None),
-    top_p: float = Form(default=0.7, ge=0.0, le=1.0),
-    repetition_penalty: float = Form(default=1.2, ge=1.0, le=2.0),
-    temperature: float = Form(default=0.7, ge=0.0, le=1.0),
-    chunk_length: int = Form(default=200, ge=50, le=500),
-    max_new_tokens: int = Form(default=1024, ge=128, le=2048),
-    seed: int = Form(default=None),
-    reference_audio: UploadFile = File(default=None),
+    request: Request,
+    # body: dict = Form(...),
+    # model: str = Form(...),
+    # input: str = Form(...),
+    # voice: str = Form(default=None),
+    # top_p: float = Form(default=0.7, ge=0.0, le=1.0),
+    # repetition_penalty: float = Form(default=1.2, ge=1.0, le=2.0),
+    # temperature: float = Form(default=0.7, ge=0.0, le=1.0),
+    # chunk_length: int = Form(default=200, ge=50, le=500),
+    # max_new_tokens: int = Form(default=1024, ge=128, le=2048),
+    # seed: int = Form(default=None),
+    # reference_audio: UploadFile = File(default=None),
 ):
+    body = await request.json()
+    model = body.get("model", "")
+    input = body.get("input", "")
+    voice = body.get("voice", None)
+    top_p = body.get("top_p", 0.7)
+    repetition_penalty = body.get("repetition_penalty", 1.2)
+
     logger.info(f"TTS request | Model: {model} | Chars: {len(input)}")
 
     try:
