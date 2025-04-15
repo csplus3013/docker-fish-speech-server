@@ -1,4 +1,4 @@
-# FishSpeech API Webserver in Docker
+# Fish Speech API Webserver in Docker
 
 OpenAPI-like voice generation server based on [fish-speech-1.5](https://huggingface.co/fishaudio/fish-speech-1.5).
 
@@ -28,13 +28,13 @@ cd docker-fish-speech-server
 
 ```shell
 cp docker-compose.dist.yml docker-compose.yml
-docker-compose up -d
+docker compose up -d
 ```
 
 Enter the container:
 
 ```shell
-docker-compos exec api bash
+docker compose exec api bash
 ```
 
 Download the model:
