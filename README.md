@@ -98,7 +98,7 @@ curl http://localhost:8000/audio/speech \
 curl http://gpu02:13000/audio/speech \
   -X POST \
   -F model="fish-speech-1.5" \
-  -F voice= \
+  -F voice="english-nice" \
   -F input="Dr. Eleanor Whitaker, a quantum physicist from Edinburgh, surreptitiously analyzed the enigmatic hieroglyphs while humming Für Elise —her quizzical expression mirrored the cryptic symbols perplexing arrangement, yet she remained determined to decipher their archaic secrets." \
   --output "speech.wav"
 ```
