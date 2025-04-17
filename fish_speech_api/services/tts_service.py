@@ -1,3 +1,4 @@
+# В fish_speech_api/services/tts_service.py
 import logging
 import tempfile
 import shutil
@@ -17,8 +18,7 @@ def generate_tts(
     text: str,
     model_name: str,
     voice_sample: bytes = None,
-    voice_name: str = None,
-    instructions: str = None,
+    prompt_text: str = None,
     top_p: float = 0.7,
     temperature: float = 0.7,
     repetition_penalty: float = 1.2,
@@ -32,13 +32,10 @@ def generate_tts(
     model_paths = get_model_paths(model_name)
 
     try:
-        # Optional: process voice sample to temp file
         reference_audio_path = None
         if voice_sample:
-            logger.info("Processing reference voice sample...")
             reference_audio_path = save_temp_audio(voice_sample)
 
-        # Create a safe temp output file
         output_file = get_temp_file()
         output_file_path = output_file.name
 
@@ -56,9 +53,9 @@ def generate_tts(
             chunk_length=chunk_length,
             max_new_tokens=max_new_tokens,
             seed=seed,
+            prompt_text=prompt_text
         )
 
-        # Move output to final location (if needed)
         final_output_path = f"{tempfile.gettempdir()}/fish_tts_output.wav"
         shutil.copy(output_file_path, final_output_path)
         logger.info(f"TTS output saved to: {final_output_path}")

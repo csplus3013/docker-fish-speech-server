@@ -190,6 +190,7 @@ def text_to_speech(
     chunk_length=200,
     max_new_tokens=1024,
     seed=None,
+    prompt_text=None,
 ):
     logger.info("Starting text-to-speech pipeline...")
     start = time.time()
@@ -213,7 +214,7 @@ def text_to_speech(
                 checkpoint_path=llama_ckpt,
                 temp_dir=temp_dir,
                 prompt_tokens=reference_tokens_path,
-                prompt_text=text,
+                prompt_text=prompt_text,
                 device=device,
                 compile_model=compile_model,
                 top_p=top_p,

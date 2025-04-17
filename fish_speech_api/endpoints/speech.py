@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 import base64
 import os
 import requests
@@ -35,17 +35,21 @@ class TTSRequest(BaseModel):
     max_new_tokens: int = 2048
     seed: Optional[int] = None
     reference_audio_base64: Optional[str] = None
+    reference_text: Optional[str] = None
 
 
-async def get_voice_sample(voice: str) -> Optional[bytes]:
-    """Get voice sample from repository."""
+async def get_voice_sample(voice: str) -> Tuple[bytes, str]:
+    """Get voice sample and corresponding text from .lab file"""
     voice_key = voice.lower()
     voice_path = VOICE_DIR / f"{voice_key}.wav"
-    if voice_path.exists():
-        logger.info(f"Using default voice sample: {voice}")
-        return voice_path.read_bytes()
-    else:
-        raise HTTPException(status_code=400, detail="Voice sample not found")
+    lab_path = VOICE_DIR / f"{voice_key}.lab"
+
+    if not voice_path.exists():
+        raise HTTPException(400, f"Voice sample not found: {voice_key}.wav")
+    if not lab_path.exists():
+        raise HTTPException(400, f"Text label not found: {voice_key}.lab")
+
+    return voice_path.read_bytes(), lab_path.read_text().strip()
 
 
 async def process_tts_request(
@@ -59,31 +63,32 @@ async def process_tts_request(
     max_new_tokens: int,
     seed: Optional[int],
     reference_audio_bytes: Optional[bytes],
+    prompt_text: Optional[str],
 ) -> FileResponse:
     # Validate input length
     if len(input_text) > 4096:
-        raise HTTPException(status_code=400, detail="Input too long (max 4096 chars)")
+        raise HTTPException(400, "Input too long (max 4096 chars)")
+
+    audio_bytes = None
 
     # Priority 1: User-provided reference
     if reference_audio_bytes:
-        # Check size
         if len(reference_audio_bytes) > 25 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="Audio data too large (max 25MB)")
-        # Check WAV format via magic number
+            raise HTTPException(400, "Audio data too large (max 25MB)")
         if reference_audio_bytes[:4] != b'RIFF':
-            raise HTTPException(status_code=400, detail="Invalid audio format (must be WAV)")
+            raise HTTPException(400, "Invalid audio format (must be WAV)")
         audio_bytes = reference_audio_bytes
+
     # Priority 2: Voice sample from repository
     elif voice:
-        audio_bytes = await get_voice_sample(voice)
-    else:
-        audio_bytes = None
+        audio_bytes, prompt_text = await get_voice_sample(voice)
 
     # Generate TTS
     output_path = generate_tts(
         text=input_text,
         model_name=model,
         voice_sample=audio_bytes,
+        prompt_text=prompt_text,
         top_p=top_p,
         repetition_penalty=repetition_penalty,
         temperature=temperature,
@@ -124,6 +129,7 @@ async def speech_endpoint(request: Request):
 
             # Handle reference audio file
             reference_audio = form_data.get('reference_audio')
+            reference_text = form_data.get('reference_text', None)
             reference_audio_bytes = None
             if reference_audio:
                 if not reference_audio.filename.lower().endswith('.wav'):
@@ -141,6 +147,7 @@ async def speech_endpoint(request: Request):
                 max_new_tokens=max_new_tokens,
                 seed=seed,
                 reference_audio_bytes=reference_audio_bytes,
+                prompt_text=reference_text
             )
 
         elif 'application/json' in content_type:
@@ -179,6 +186,7 @@ async def speech_endpoint(request: Request):
                 max_new_tokens=request_data.max_new_tokens,
                 seed=request_data.seed,
                 reference_audio_bytes=reference_audio_bytes,
+                prompt_text=request_data.reference_text,
             )
         else:
             raise HTTPException(415, "Unsupported media type")
