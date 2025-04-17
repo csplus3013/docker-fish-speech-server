@@ -2,6 +2,8 @@ import logging
 from pathlib import Path
 from typing import Optional
 import base64
+import os
+import requests
 
 from pydantic import BaseModel, ValidationError
 from fastapi import APIRouter, UploadFile, File, Form, Request, HTTPException
@@ -9,6 +11,8 @@ from fastapi.responses import FileResponse
 from fastapi.exceptions import HTTPException
 
 from fish_speech_api.services.tts_service import generate_tts
+
+VOICE_DIR = Path("./examples")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,6 +37,17 @@ class TTSRequest(BaseModel):
     reference_audio_base64: Optional[str] = None
 
 
+async def get_voice_sample(voice: str) -> Optional[bytes]:
+    """Get voice sample from repository."""
+    voice_key = voice.lower()
+    voice_path = VOICE_DIR / f"{voice_key}.wav"
+    if voice_path.exists():
+        logger.info(f"Using default voice sample: {voice}")
+        return voice_path.read_bytes()
+    else:
+        raise HTTPException(status_code=400, detail="Voice sample not found")
+
+
 async def process_tts_request(
     model: str,
     input_text: str,
@@ -49,21 +64,26 @@ async def process_tts_request(
     if len(input_text) > 4096:
         raise HTTPException(status_code=400, detail="Input too long (max 4096 chars)")
 
-    # Validate reference audio if provided
+    # Priority 1: User-provided reference
     if reference_audio_bytes:
         # Check size
         if len(reference_audio_bytes) > 25 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Audio data too large (max 25MB)")
-
         # Check WAV format via magic number
         if reference_audio_bytes[:4] != b'RIFF':
             raise HTTPException(status_code=400, detail="Invalid audio format (must be WAV)")
+        audio_bytes = reference_audio_bytes
+    # Priority 2: Voice sample from repository
+    elif voice:
+        audio_bytes = await get_voice_sample(voice)
+    else:
+        audio_bytes = None
 
     # Generate TTS
     output_path = generate_tts(
         text=input_text,
         model_name=model,
-        voice_sample=reference_audio_bytes,
+        voice_sample=audio_bytes,
         top_p=top_p,
         repetition_penalty=repetition_penalty,
         temperature=temperature,
