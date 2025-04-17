@@ -70,7 +70,7 @@ python main.py
 
 ## 🧪 Testing the API
 
-Generate speech with default voice:
+### Generate speech with default voice
 
 ```shell
 curl http://localhost:8000/audio/speech \
@@ -80,33 +80,77 @@ curl http://localhost:8000/audio/speech \
   --output "speech.wav"
 ```
 
-Generate speech with voice style transfer:
+In JSON format:
 
 ```shell
 curl http://localhost:8000/audio/speech \
-  -X POST \
-  -H 'Content-Type: multipart/form-data' \
-  -F model="fish-speech-1.5" \
-  -F input="Никита, это уже вариант с подменой голоса. Работает чуть дольше по времени, чем оригинальная версия, но зато работает." \
-  -F reference_audio="@./audio_2025-04-12_21-01-04.wav" \
+  -H "Content-Type: application/json" \
+  -d '{
+      "model": "fish-speech-1.5",
+      "input": "Hello, this is a test of Fish Speech API"
+  }' \
   --output "speech.wav"
 ```
 
-Advanced settings:
+### Generate speech with voice style transfer
 
 ```shell
 curl http://localhost:8000/audio/speech \
   -X POST \
   -H 'Content-Type: multipart/form-data' \
   -F model="fish-speech-1.5" \
-  -F input="Никита, это уже вариант с подменой голоса. Работает чуть дольше по времени, чем оригинальная версия, но зато работает." \
+  -F input="Hello, this is a test of Fish Speech API" \
+  -F reference_audio="@voice-viola.wav" \
+  --output "speech.wav"
+```
+
+In JSON format:
+
+```shell
+curl http://localhost:8000/audio/speech \
+  -H "Content-Type: application/json" \
+  -d '{
+      "model": "fish-speech-1.5",
+      "input": "Hello, this is a test of Fish Speech API",
+      "reference_audio": "=base64..."
+  }' \
+  --output "speech.wav"
+```
+
+#### Advanced settings
+
+```shell
+curl http://localhost:8000/audio/speech \
+  -X POST \
+  -H 'Content-Type: multipart/form-data' \
+  -F model="fish-speech-1.5" \
+  -F input="Hello, this is a test of Fish Speech API" \
   -F top_p="0.1" \
   -F repetition_penalty="1.3" \
   -F temperature="0.75" \
   -F chunk_length="150" \
   -F max_new_tokens="768" \
   -F seed="42" \
-  -F reference_audio="@./audio_2025-04-12_21-01-04.wav" \
+  -F reference_audio="@voice-viola.wav" \
+  --output "speech.wav"
+```
+
+In JSON format:
+
+```shell
+curl http://localhost:8000/audio/speech \
+  -H "Content-Type: application/json" \
+  -d '{
+      "model": "fish-speech-1.5",
+      "input": "Hello, this is a test of Fish Speech API",
+      "top_p": "0.1",
+      "repetition_penalty": "1.3",
+      "temperature": "0.75",
+      "chunk_length": "150",
+      "max_new_tokens": "768",
+      "seed": "42",
+      "reference_audio": "=base64..."
+  }' \
   --output "speech.wav"
 ```
 
