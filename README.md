@@ -92,14 +92,38 @@ curl http://localhost:8000/audio/speech \
   --output "speech.wav"
 ```
 
-### Generate speech with voice style transfer
+### Generate speech with example voice
+
+```shell
+curl http://gpu02:13000/audio/speech \
+  -X POST \
+  -F model="fish-speech-1.5" \
+  -F voice= \
+  -F input="Dr. Eleanor Whitaker, a quantum physicist from Edinburgh, surreptitiously analyzed the enigmatic hieroglyphs while humming Für Elise —her quizzical expression mirrored the cryptic symbols perplexing arrangement, yet she remained determined to decipher their archaic secrets." \
+  --output "speech.wav"
+```
+
+In JSON format:
+
+```shell
+curl http://localhost:8000/audio/speech \
+  -H "Content-Type: application/json" \
+  -d '{
+      "model": "fish-speech-1.5",
+      "voice": "english-nice",
+      "input": "Dr. Eleanor Whitaker, a quantum physicist from Edinburgh, surreptitiously analyzed the enigmatic hieroglyphs while humming Für Elise —her quizzical expression mirrored the cryptic symbols perplexing arrangement, yet she remained determined to decipher their archaic secrets."
+  }' \
+  --output "speech.wav"
+```
+
+### Generate speech with reference voice
 
 ```shell
 curl http://localhost:8000/audio/speech \
   -X POST \
   -H 'Content-Type: multipart/form-data' \
   -F model="fish-speech-1.5" \
-  -F input="Hello, this is a test of Fish Speech API" \
+  -F input="Dr. Eleanor Whitaker, a quantum physicist from Edinburgh, surreptitiously analyzed the enigmatic hieroglyphs while humming Für Elise —her quizzical expression mirrored the cryptic symbols perplexing arrangement, yet she remained determined to decipher their archaic secrets." \
   -F reference_audio="@voice-viola.wav" \
   --output "speech.wav"
 ```
@@ -111,7 +135,7 @@ curl http://localhost:8000/audio/speech \
   -H "Content-Type: application/json" \
   -d '{
       "model": "fish-speech-1.5",
-      "input": "Hello, this is a test of Fish Speech API",
+      "input": "Dr. Eleanor Whitaker, a quantum physicist from Edinburgh, surreptitiously analyzed the enigmatic hieroglyphs while humming Für Elise —her quizzical expression mirrored the cryptic symbols perplexing arrangement, yet she remained determined to decipher their archaic secrets.",
       "reference_audio": "=base64..."
   }' \
   --output "speech.wav"
@@ -124,7 +148,7 @@ curl http://localhost:8000/audio/speech \
   -X POST \
   -H 'Content-Type: multipart/form-data' \
   -F model="fish-speech-1.5" \
-  -F input="Hello, this is a test of Fish Speech API" \
+  -F input="Dr. Eleanor Whitaker, a quantum physicist from Edinburgh, surreptitiously analyzed the enigmatic hieroglyphs while humming Für Elise —her quizzical expression mirrored the cryptic symbols perplexing arrangement, yet she remained determined to decipher their archaic secrets." \
   -F top_p="0.1" \
   -F repetition_penalty="1.3" \
   -F temperature="0.75" \
@@ -142,7 +166,7 @@ curl http://localhost:8000/audio/speech \
   -H "Content-Type: application/json" \
   -d '{
       "model": "fish-speech-1.5",
-      "input": "Hello, this is a test of Fish Speech API",
+      "input": "Dr. Eleanor Whitaker, a quantum physicist from Edinburgh, surreptitiously analyzed the enigmatic hieroglyphs while humming Für Elise —her quizzical expression mirrored the cryptic symbols perplexing arrangement, yet she remained determined to decipher their archaic secrets.",
       "top_p": "0.1",
       "repetition_penalty": "1.3",
       "temperature": "0.75",
