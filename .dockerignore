@@ -1,3 +1,4 @@
+/.git/
 /models/*/
 /.idea/
 /.venv/
@@ -6,3 +7,4 @@ __pycache__
 *.wav
 *.mp3
 *.ogg
+*.mp4
