@@ -27,7 +27,7 @@ router = APIRouter()
 class TTSRequest(BaseModel):
     model: str
     input: str
-    voice: Optional[str] = None
+    voice: Optional[str] = 'english-nice'
     top_p: float = 0.7
     repetition_penalty: float = 1.5
     temperature: float = 0.7
