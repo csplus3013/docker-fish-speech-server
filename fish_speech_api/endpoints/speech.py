@@ -107,10 +107,15 @@ async def process_tts_request(
 @router.post("/audio/speech")
 async def speech_endpoint(request: Request):
     content_type = request.headers.get('Content-Type', '')
+    logger.info(f"Incoming request with Content-Type: {content_type}")
 
     try:
         if 'multipart/form-data' in content_type:
             form_data = await request.form()
+
+            # Log form data
+            log_data = {k: v.filename if isinstance(v, UploadFile) else v for k, v in form_data.items()}
+            logger.info(f"Multipart form data: {log_data}")
 
             # Extract and validate form fields
             model = form_data.get('model')
@@ -152,6 +157,7 @@ async def speech_endpoint(request: Request):
 
         elif 'application/json' in content_type:
             json_data = await request.json()
+            logger.info(f"JSON request data: {json_data}")
 
             # Explicit required parameter checks
             if 'model' not in json_data or 'input' not in json_data:
@@ -189,11 +195,14 @@ async def speech_endpoint(request: Request):
                 prompt_text=request_data.reference_text,
             )
         else:
+            logger.warning(f"Unsupported media type: {content_type}")
             raise HTTPException(415, "Unsupported media type")
 
     except HTTPException as he:
+        logger.warning(f"HTTPException: {he.detail}")
         raise he
     except ValidationError as ve:
+        logger.warning(f"Validation error: {str(ve)}")
         raise HTTPException(400, str(ve))
     except Exception as e:
         logger.error(f"Request failed: {str(e)}")
