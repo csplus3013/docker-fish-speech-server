@@ -207,3 +207,8 @@ async def speech_endpoint(request: Request):
     except Exception as e:
         logger.error(f"Request failed: {str(e)}")
         raise HTTPException(500, "Internal server error")
+
+
+@router.get("/ping")
+async def ping():
+    return {"status": "ok"}
