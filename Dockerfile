@@ -25,6 +25,8 @@ RUN set -xe \
 
 # Copy sources
 COPY . .
+# ADD THIS LINE to make entrypoint.sh executable
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 RUN set -xe \
  && git submodule update --init --recursive
 RUN chmod +x /app/entrypoint.sh
